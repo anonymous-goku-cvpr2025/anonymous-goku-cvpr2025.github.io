@@ -1,0 +1,984 @@
+
+<!-- Welcom to use this template, I would appreciate it if you provide a link back to this website  -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <title>Goku</title>
+    <meta name="description" content="Generative Flow Kit for Unified Image-Video Creation">
+    <meta name="keywords" content="Video generation, image generation, diffusion model, fast, real-time, distillation, adversarial">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#EDE8F5">
+    <meta property="og:image" content="">
+    <link rel="shortcut icon" href="./assets/ball.png" type="image/x-icon">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            font-style: normal;
+            font-stretch: 100%;
+            font-display: block;
+            font-weight: 300 700;
+            src: url('./assets/roboto.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        video {
+            background-color: #f0f0f0;
+            aspect-ratio: 16 / 9;
+        }
+
+        #latent-interpolation video {
+            aspect-ratio: 1;
+        }
+
+        img {
+            background-color: #111;
+            aspect-ratio: 1;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: "Roboto", sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+
+        #logo {
+            width: 40px;
+            height: 40px;
+            position: fixed;
+            top: 12px;
+            right: max(calc(50vw - 1920px/2 + 192px), 10%);
+            z-index: 1001;
+        }
+
+        #intro {
+            padding: 140px 0 80px 0;
+            justify-content: center; /* Center content vertically */
+            text-align: center; /* Center text alignment */
+        }
+
+        #intro h1 {
+            font-size: 80px;
+            font-weight: 300;
+            margin: 20px 0;
+        }
+
+        #intro h2 {
+            margin: 20px 0 40px 0;
+            font-weight: 300;
+            color: #ccc
+        }
+
+        #intro h2 strong {
+            color: #fff;
+        }
+
+        section {
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .content {
+            padding: 0 10%;
+        }
+
+        .button {
+            background-color: #ccc;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: background-color 0.5s;
+            text-decoration: none;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .button:hover {
+            background-color: #fff;
+        }
+
+        section {
+            margin-top: 100px;
+        }
+        section:first-of-type {
+            margin-top: 0;
+        }
+
+        .title {
+            background-color: #000;
+            position: sticky;
+            top: 0;
+            padding: 20px 10%;
+            font-size: 20px;
+            font-weight: 600;
+            z-index: 1000;
+            min-height: 60px;
+            box-sizing: border-box;
+        }
+
+        .description {
+            padding: 0 10% 20px 10%;
+            color: #999;
+            line-height: 25px;
+            font-weight: 300;
+        }
+
+        .highlight {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .flex-row {
+            display: flex;
+            column-gap: 5px;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            padding: 0 5px 5px 5px;
+            
+        }
+
+        .flex-row > div {
+            flex-grow: 1;
+            flex-basis: 0;
+            position: relative;
+        }
+
+        .flex > div {
+            width: calc(100% / 3 - 5px * 2 / 3);
+            margin-top: 2.5px;
+            margin-bottom: 2.5px;
+            position: relative;
+        }
+
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 0 5px;
+        }
+
+        .prompt-wrap {
+            position: relative;
+        }
+
+        .flex-2 {
+            justify-content: center;
+            column-gap: 5px;
+        }
+        .flex-2 > div {
+            width: calc(100% / 2 - 5px / 2);
+            min-width: calc(100% / 3 - 5px * 2 / 3);
+            max-width: calc(100vh - 200px);
+        }
+
+        video, img {
+            width: 100%;
+        }
+
+        .prompt {
+            max-width: calc(100% - 20px);
+            position: absolute;
+            background: rgba(0,0,0,0.5);
+            color: rgba(255,255,255,0.9);
+            font-size: 10px;
+            backdrop-filter: blur(10px);
+            bottom: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            box-sizing: border-box;
+        }
+
+        .full-screen-button {
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            background-size: 12px;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .flex-very-compact .full-screen-button {
+            width: 100%;
+            height: 100%;
+            top: 0;
+            right: 0;
+            border-radius: 0;
+        }
+
+        @media (hover: hover) {
+            .prompt-wrap:hover .prompt,
+            .full-screen-wrap:hover .full-screen-button {
+                opacity: 1;
+                pointer-events: all;
+            }
+            #contributors a:hover {
+                background-color: #222;
+            }
+        }
+
+        @media (hover: none) {
+            #contributors a {
+                pointer-events: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .flex-dynamic > div {
+                width: calc(100% / 2 - 5px / 2);
+            }
+        }
+
+        @media (max-width: 640px) {
+            #intro h1 {
+                font-size: 50px;
+            }
+            #intro h2 {
+                font-size: 20px;
+            }
+            .ruler {
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 512px) {
+            .flex-dynamic > div,
+            .flex-dynamic-1 > div {
+                width: 100%;
+            }
+
+            .content {
+                padding: 0 12px;
+            }
+
+            .description {
+                padding: 0 12px 20px 12px;
+            }
+
+            .title {
+                padding: 20px 12px;
+            }
+
+            #logo {
+                right: 12px;
+                position: absolute;
+            }
+
+            .ruler-tight {
+                font-size: 6px;
+                column-gap: 0;
+            }
+
+            .title-long {
+                font-size: 16px;
+            }
+
+            .flex-compact .full-screen-button {
+                width: 100%;
+                height: 100%;
+                top: 0;
+                right: 0;
+                border-radius: 0;
+            }
+        }
+
+        .margin-top {
+            margin-top: 50px;
+        }
+
+        .ruler {
+            text-align: center;
+            position: sticky;
+            top: 60px;
+            z-index: 999;
+            background-color: #000;
+            color: #999;
+            padding: 5px 0;
+        }
+
+        .ruler > div {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .selected {
+            box-shadow: 0 0 0 5px #fff;
+        }
+
+        #contributors {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 200;
+            background: linear-gradient(transparent, #000 100px);
+            position: relative;
+            z-index: 10000;
+            padding-top: 100px;
+            box-sizing: content-box;
+        }
+        #contributors strong {
+            color: #999;
+            font-weight: 200;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        #contributors a {
+            display: block;
+            padding: 3px 20px;
+            border-radius: 100px;
+            background-color: #000;
+            transition: background-color 0.5s;
+            text-decoration: none;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <section id="intro">
+        <div class="content">
+            <h1><strong>Goku</strong></h1>
+            <h2>Generative Flow Kit for Unified Image-Video Creation</h2>
+            
+        </div>
+    </section>
+    <section id="video">
+        <div class="title">
+            Video Generation Demos
+        </div>
+        <div class="description">
+            We present a collection of video generation demos created using the Goku model.
+We infer using the original MovieGenBench prompts without any rewriting for a fair comparison.
+The full set can be found in the <a href='https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench' target='_blank' rel='noopener noreferrer'>Goku MovieGenBench</a>.
+Please keep this page confidential for review purposes only at this time.
+        </div>
+        
+        <div class="flex flex-dynamic">
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0001.mp4"></video>
+                <div class="prompt">A stylish woman walks down a Tokyo street filled with warm glowing neon and animated city signage. She wears a black leather jacket, a long red dress, and black boots, and carries a black purse. She wears sunglasses and red lipstick. She walks confidently and casually. The street is damp and reflective, creating a mirror effect of the colorful lights. Many pedestrians walk about.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0001.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0002.mp4"></video>
+                <div class="prompt">Several giant wooly mammoths approach treading through a snowy meadow, their long wooly fur lightly blows in the wind as they walk, snow covered trees and dramatic snow capped mountains in the distance, mid afternoon light with wispy clouds and a sun high in the distance creates a warm glow, the low camera view is stunning capturing the large furry mammal with beautiful photography, depth of field.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0002.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0003.mp4"></video>
+                <div class="prompt">A movie trailer featuring the adventures of the 30 year old space man wearing a red wool knitted motorcycle helmet, blue sky, salt desert, cinematic style, shot on 35mm film, vivid colors.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0003.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0004.mp4"></video>
+                <div class="prompt">Drone view of waves crashing against the rugged cliffs along Big Sur’s garay point beach. The crashing blue waters create white-tipped waves, while the golden light of the setting sun illuminates the rocky shore. A small island with a lighthouse sits in the distance, and green shrubbery covers the cliff’s edge. The steep drop from the road down to the beach is a dramatic feat, with the cliff’s edges jutting out over the sea. This is a view that captures the raw beauty of the coast and the rugged landscape of the Pacific Coast Highway.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0004.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0006.mp4"></video>
+                <div class="prompt">A gorgeously rendered papercraft world of a coral reef, rife with colorful fish and sea creatures.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0006.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0007.mp4"></video>
+                <div class="prompt">This close-up shot of a Victoria crowned pigeon showcases its striking blue plumage and red chest. Its crest is made of delicate, lacy feathers, while its eye is a striking red color. The bird’s head is tilted slightly to the side, giving the impression of it looking regal and majestic. The background is blurred, drawing attention to the bird’s striking appearance.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0007.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0009.mp4"></video>
+                <div class="prompt">A young man at his 20s is sitting on a piece of cloud in the sky, reading a book.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0009.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0012.mp4"></video>
+                <div class="prompt">Extreme close up of a 24 year old woman’s eye blinking, standing in Marrakech during magic hour, cinematic film shot in 70mm, depth of field, vivid colors, cinematic</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0012.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0013.mp4"></video>
+                <div class="prompt">A cartoon kangaroo disco dances.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0013.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0017.mp4"></video>
+                <div class="prompt">3D animation of a small, round, fluffy creature with big, expressive eyes explores a vibrant, enchanted forest. The creature, a whimsical blend of a rabbit and a squirrel, has soft blue fur and a bushy, striped tail. It hops along a sparkling stream, its eyes wide with wonder. The forest is alive with magical elements: flowers that glow and change colors, trees with leaves in shades of purple and silver, and small floating lights that resemble fireflies. The creature stops to interact playfully with a group of tiny, fairy-like beings dancing around a mushroom ring. The creature looks up in awe at a large, glowing tree that seems to be the heart of the forest.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0017.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0021.mp4"></video>
+                <div class="prompt">A large orange octopus is seen resting on the bottom of the ocean floor, blending in with the sandy and rocky terrain. Its tentacles are spread out around its body, and its eyes are closed. The octopus is unaware of a king crab that is crawling towards it from behind a rock, its claws raised and ready to attack. The crab is brown and spiny, with long legs and antennae. The scene is captured from a wide angle, showing the vastness and depth of the ocean. The water is clear and blue, with rays of sunlight filtering through. The shot is sharp and crisp, with a high dynamic range. The octopus and the crab are in focus, while the background is slightly blurred, creating a depth of field effect.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0021.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0022.mp4"></video>
+                <div class="prompt">A flock of paper airplanes flutters through a dense jungle, weaving around trees as if they were migrating birds.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0022.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0023.mp4"></video>
+                <div class="prompt">A cat waking up its sleeping owner demanding breakfast. The owner tries to ignore the cat, but the cat tries new tactics and finally the owner pulls out a secret stash of treats from under the pillow to hold the cat off a little longer.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0023.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0026.mp4"></video>
+                <div class="prompt">Tour of an art gallery with many beautiful works of art in different styles.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0026.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0028.mp4"></video>
+                <div class="prompt">A stop motion animation of a flower growing out of the windowsill of a suburban house.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0028.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0030.mp4"></video>
+                <div class="prompt">An extreme close-up of an gray-haired man with a beard in his 60s, he is deep in thought pondering the history of the universe as he sits at a cafe in Paris, his eyes focus on people offscreen as they walk as he sits mostly motionless, he is dressed in a wool coat suit coat with a button-down shirt , he wears a brown beret and glasses and has a very professorial appearance, and the end he offers a subtle closed-mouth smile as if he found the answer to the mystery of life, the lighting is very cinematic with the golden light and the Parisian streets and city in the background, depth of field, cinematic 35mm film.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0030.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0031.mp4"></video>
+                <div class="prompt">A beautiful silhouette animation shows a wolf howling at the moon, feeling lonely, until it finds its pack.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0031.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0033.mp4"></video>
+                <div class="prompt">A litter of golden retriever puppies playing in the snow. Their heads pop out of the snow, covered in.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0033.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0042.mp4"></video>
+                <div class="prompt">This close-up shot of a chameleon showcases its striking color changing capabilities. The background is blurred, drawing attention to the animal’s striking appearance.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0042.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0044.mp4"></video>
+                <div class="prompt">A white and orange tabby cat is seen happily darting through a dense garden, as if chasing something. Its eyes are wide and happy as it jogs forward, scanning the branches, flowers, and leaves as it walks. The path is narrow as it makes its way between all the plants. the scene is captured from a ground-level angle, following the cat closely, giving a low and intimate perspective. The image is cinematic with warm tones and a grainy texture. The scattered daylight between the leaves and plants above creates a warm contrast, accentuating the cat’s orange fur. The shot is clear and sharp, with a shallow depth of field.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0044.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0046.mp4"></video>
+                <div class="prompt">Tiltshift of a construction site filled with workers, equipment, and heavy machinery.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0046.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0049.mp4"></video>
+                <div class="prompt">Chef chopping onions in the kitchen for the preparation of the dish</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0049.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0053.mp4"></video>
+                <div class="prompt">Dew on blue rose petals, HD, close up, detail</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0053.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0056.mp4"></video>
+                <div class="prompt">A Chinese man sits at a table and eats noodles with chopsticks</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0056.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0059.mp4"></video>
+                <div class="prompt">A tropical fish swimming in ocean reefs</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0059.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0064.mp4"></video>
+                <div class="prompt">Blooming Flowers</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0064.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0066.mp4"></video>
+                <div class="prompt">Panda playing the guitar</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0066.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0069.mp4"></video>
+                <div class="prompt">The rabbit who reads the newspaper and wears glasses</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0069.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0070.mp4"></video>
+                <div class="prompt">Close-up of a bright blue parrot's feathers glittering in the light, showing its unique plumage and vibrant colors</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0070.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0076.mp4"></video>
+                <div class="prompt">Handheld tracking shot, following a red balloon floating above the ground in abandon street.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0076.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0084.mp4"></video>
+                <div class="prompt">Super fast zoom out from the peak of a frozen mountain where a lonely hiker is arriving to the summit.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0084.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0086.mp4"></video>
+                <div class="prompt">A first-person POV shot rapidly flies towards a house's front door at 10x speed.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0086.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0089.mp4"></video>
+                <div class="prompt">A tsunami coming through an alley in Bulgaria, dynamic movement.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0089.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0091.mp4"></video>
+                <div class="prompt">A cinematic wide portrait of a man with his face lit by the glow of a TV.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0091.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0098.mp4"></video>
+                <div class="prompt">A middle-aged sad bald man becomes happy as a wig of curly hair and sunglasses fall suddenly on his head.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0098.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0099.mp4"></video>
+                <div class="prompt">An ultra-wide shot of a giant stone hand reaching out of a pile of rocks at the base of a mountain.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0099.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0101.mp4"></video>
+                <div class="prompt">An oil painting of a natural forest environment with colorful maple trees and cinematic parallax animation.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0101.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0103.mp4"></video>
+                <div class="prompt">A man made of rocks walking in the forest, full-body shot.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0103.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0106.mp4"></video>
+                <div class="prompt">Zooming through a dark forest with neon light flora lighting up.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0106.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0118.mp4"></video>
+                <div class="prompt">Dragon-toucan walking through the Serengeti.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0118.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0120.mp4"></video>
+                <div class="prompt">A side profile shot of a woman with fireworks exploding in the distance beyond her.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0120.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0123.mp4"></video>
+                <div class="prompt">A woman serving a powerful shot in a game of tennis.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0123.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0124.mp4"></video>
+                <div class="prompt">lizard catching a bug</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0124.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0133.mp4"></video>
+                <div class="prompt">A bear driving a car</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0133.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0147.mp4"></video>
+                <div class="prompt">A cat is chasing a mice across a field, the mice runs towards an underground hole and the cat is left disappointed.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0147.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0167.mp4"></video>
+                <div class="prompt">A toddler sharing a cookie with their stuffed animal.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0167.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0182.mp4"></video>
+                <div class="prompt">A person dipping a crispy French fry into ketchup.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0182.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0189.mp4"></video>
+                <div class="prompt">A gibbon swinging through the canopy.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0189.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0190.mp4"></video>
+                <div class="prompt">A cat dancing the tango</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0190.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0193.mp4"></video>
+                <div class="prompt">A pair of lovebirds preening each other's feathers.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0193.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0264.mp4"></video>
+                <div class="prompt">A miniature baby zebra walking on a fingertip</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0264.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0265.mp4"></video>
+                <div class="prompt">A dog made of ice melts completely in a hot summer day</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0265.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0271.mp4"></video>
+                <div class="prompt">Penguins roller skating</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0271.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0276.mp4"></video>
+                <div class="prompt">A cute golden dragon is walking like a model on stage, and the audience is clapping for him.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0276.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0294.mp4"></video>
+                <div class="prompt">A bear made of strawberrys is walking in the forest, its eyes looking around as if it is seeing the world for the first time</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0294.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0298.mp4"></video>
+                <div class="prompt">A female warrior rushes towards the camera, and suddenly she turns into a holographic monster.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0298.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0345.mp4"></video>
+                <div class="prompt">A breathtaking image of a meteor colliding with the surface of a planet, with bright flames and a massive explosion, illustrating the power and destruction of such an event.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0345.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0364.mp4"></video>
+                <div class="prompt">A rocket blasting off from the launch pad, accelerating rapidly into the sky.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0364.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0376.mp4"></video>
+                <div class="prompt">Birds made of shiny crystal are flying out of a cage</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0376.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0380.mp4"></video>
+                <div class="prompt">An underwater fashion show taking place in the middle of an enchanted forest, with models walking on a submerged runway surrounded by fish and glowing plants</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0380.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0387.mp4"></video>
+                <div class="prompt">a walking figure made out of water tours an art gallery with many beautiful works of art in different styles</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0387.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0389.mp4"></video>
+                <div class="prompt">a giant cathedral is completely filled with cats. there are cats everywhere you look. a man enters the cathedral and bows before the giant cat king sitting on a throne.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0389.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0391.mp4"></video>
+                <div class="prompt">this close-up shot of a futuristic cybernetic german shepherd showcases its striking brown and black fur. its chest and head have robotic modifications while its eye is a striking black color with futuristic digital altercations. the dog's head is tilted slightly to the side, giving the impression of it looking regal and majestic. the neon background is blurred, drawing attention to the dog's striking appearance</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0391.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0392.mp4"></video>
+                <div class="prompt">Close-up of a majestic white dragon with pearlescent, silver-edged scales, icy blue eyes, elegant ivory horns, and misty breath. Focus on detailed facial features and textured scales, set against a softly blurred background</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0392.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0401.mp4"></video>
+                <div class="prompt">a tortoise whose body is made of glass, with cracks that have been repaired using kintsugi, is walking on a black sand beach at sunset</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0401.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0402.mp4"></video>
+                <div class="prompt">cinematic trailer for a group of samoyed puppies learning to become chefs</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0402.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0404.mp4"></video>
+                <div class="prompt">minecraft with the most gorgeous high res 8k texture pack ever</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0404.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0406.mp4"></video>
+                <div class="prompt">a spooky haunted mansion, with friendly jack o lanterns and ghost characters welcoming trick or treaters to the entrance, tilt shift photography</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0406.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0407.mp4"></video>
+                <div class="prompt">A surreal collage of a whirlwind of colorful fabrics and clothing items, fluttering and swirling in mid-air. The scene is dynamic and fashionable, with vibrant textile patterns. A sense of motion and style create a visually striking and complex scene. Pitch black background.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0407.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0409.mp4"></video>
+                <div class="prompt">A dynamic motion shot of a broom morphing surreal and magically into a peacock. The handle shortens and curves into a slender neck, the bristles fanning out into a magnificent tail. The camera moves around as vibrant colors and eye-shaped patterns emerge on the expanding feathers. A small head forms at the top, complete with a delicate crest. The transformation completes as the peacock proudly displays its newly formed plumage.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0409.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0412.mp4"></video>
+                <div class="prompt">A cat jumps into the water and transforms into a fish.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0412.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0413.mp4"></video>
+                <div class="prompt">A ball of wool transforms into a cat made of wool</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0413.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0417.mp4"></video>
+                <div class="prompt">A pile of beans scattered on the cutting board transforms into mini soldiers.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0417.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0422.mp4"></video>
+                <div class="prompt">A little boy rides a fast-moving dragon in the sky.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0422.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0423.mp4"></video>
+                <div class="prompt">two pigs are eating a hotpot</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0423.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0427.mp4"></video>
+                <div class="prompt">A water fountain with coins flowing out instead of water.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0427.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0429.mp4"></video>
+                <div class="prompt">A coconut tree made of dollar bills at sunset, with bills falling off like leaves.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0429.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0430.mp4"></video>
+                <div class="prompt">A green monster made of plants walks through an airport.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0430.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0433.mp4"></video>
+                <div class="prompt">A green monster made of leaves walks through the airport, carrying a suitcase.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0433.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0434.mp4"></video>
+                <div class="prompt">A skeleton wearing a flower hat and sunglasses dances in the wild at sunset.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0434.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0437.mp4"></video>
+                <div class="prompt">A teenager eating a slice of pizza, cheese stretching as they pull it away.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0437.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0452.mp4"></video>
+                <div class="prompt">A young boy is playing a harmonica at sunset, with his dog sitting quietly beside him, listening.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0452.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0454.mp4"></video>
+                <div class="prompt">A close-up of sparkling water being poured into a glass, capturing the detailed flow and bubbles.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0454.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0458.mp4"></video>
+                <div class="prompt">A time-lapse video of a river flowing through a forest, with changing water levels and currents.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0458.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0466.mp4"></video>
+                <div class="prompt">A close-up of a droplet of dew forming on a leaf, capturing the detailed surface tension.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0466.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0468.mp4"></video>
+                <div class="prompt">A video showing the complex patterns of a river meandering through a landscape.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0468.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0472.mp4"></video>
+                <div class="prompt">A mesmerizing video of a whirlpool forming in a sink as water drains.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0472.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0477.mp4"></video>
+                <div class="prompt">A slow-motion video of a person swimming underwater, with detailed water movement around their body.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0477.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0485.mp4"></video>
+                <div class="prompt">A hot air balloon descending back to the ground.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0485.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0490.mp4"></video>
+                <div class="prompt">People move through a bustling city market at dawn, setting up stalls filled with vibrant colors and fresh produce while shoppers weave through the crowd, picking out the best items.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0490.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0496.mp4"></video>
+                <div class="prompt">A quaint village nestled in a valley is surrounded by blooming cherry blossoms, with petals drifting through the air as villagers go about their daily activities, adding life to the scene.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0496.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0504.mp4"></video>
+                <div class="prompt">A bustling futuristic marketplace with alien vendors and exotic goods.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0504.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0509.mp4"></video>
+                <div class="prompt">A magical forest with trees that have faces and whisper to each other.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0509.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0512.mp4"></video>
+                <div class="prompt">A floating island in the sky with waterfalls cascading into the clouds.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0512.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0515.mp4"></video>
+                <div class="prompt">A mysterious ancient temple hidden in the jungle.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0515.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0522.mp4"></video>
+                <div class="prompt">Elegantly dressed dancers glide across the polished floor of a grand ballroom, their movements synchronized to the music as they twirl and sway under the glittering chandeliers.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0522.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0525.mp4"></video>
+                <div class="prompt">Ships are docked at a bustling port city, with merchants trading goods and sailors preparing for their next voyage, creating an atmosphere of constant activity and excitement.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0525.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0529.mp4"></video>
+                <div class="prompt">A serene orchard is in full bloom, with trees heavy with blossoms and bees buzzing around, darting from flower to flower in a display of natural harmony.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0529.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0535.mp4"></video>
+                <div class="prompt">In a mysterious underwater cave, ancient ruins lie scattered among the coral, illuminated by beams of light filtering down from the surface, hinting at a forgotten past.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0535.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0545.mp4"></video>
+                <div class="prompt">An explorer walks through a mysterious cave, shining a flashlight on ancient paintings as they slowly move forward, revealing new sections of the artwork with each step.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0545.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0550.mp4"></video>
+                <div class="prompt">A couple sits at a peaceful lakeside picnic, occasionally reaching into a basket for food, while the gentle ripples on the lake reflect the shifting colors of the sky.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0550.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0561.mp4"></video>
+                <div class="prompt">A squirrel wearing a tiny aviator hat and goggles, piloting a miniature airplane through a park.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0561.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0562.mp4"></video>
+                <div class="prompt">A cat sitting at a grand piano, elegantly playing a classical piece with its paws.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0562.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0565.mp4"></video>
+                <div class="prompt">A horse wearing roller skates, gracefully gliding through a city park.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0565.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0574.mp4"></video>
+                <div class="prompt">A peacock wearing a crown, sitting on a throne and holding court with other animals.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0574.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0580.mp4"></video>
+                <div class="prompt">A lion in a king's robe, holding a royal scepter and addressing a council of jungle animals.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0580.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0589.mp4"></video>
+                <div class="prompt">An octopus playing multiple musical instruments simultaneously in an underwater band.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0589.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0590.mp4"></video>
+                <div class="prompt">A panda in a scientist's lab coat, conducting experiments with beakers and test tubes.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0590.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0596.mp4"></video>
+                <div class="prompt">A person walking up a staircase made of clouds leading to a floating castle.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0596.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0606.mp4"></video>
+                <div class="prompt">A person flying a kite made of fire, with the tail leaving a trail of sparks.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0606.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0616.mp4"></video>
+                <div class="prompt">A person walking a pet dragon through a medieval village.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0616.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0618.mp4"></video>
+                <div class="prompt">A person playing an electric guitar made of lightning, with thunderous sound waves.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0618.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0655.mp4"></video>
+                <div class="prompt">A skateboarder accelerating down a steep hill, gaining speed rapidly.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0655.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0659.mp4"></video>
+                <div class="prompt">A drag racer accelerating down the track, flames shooting from the exhaust.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0659.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0664.mp4"></video>
+                <div class="prompt">A drone accelerating through a forest, weaving between trees.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0664.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0678.mp4"></video>
+                <div class="prompt">A snowboarder accelerating down a powdery slope, weaving between trees.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0678.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0679.mp4"></video>
+                <div class="prompt">A race car accelerating through a chicane on a race track.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0679.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0680.mp4"></video>
+                <div class="prompt">A surfer accelerating on a wave, carving through the water.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0680.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0692.mp4"></video>
+                <div class="prompt">A creepy doll walks through a foggy landscape</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0692.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0695.mp4"></video>
+                <div class="prompt">pov footage of an ant navigating the inside of an ant nest</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0695.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0740.mp4"></video>
+                <div class="prompt">The gentle bubbling and evaporation of water in a natural hot spring, with mist rising and drifting across the surrounding landscape.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0740.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0768.mp4"></video>
+                <div class="prompt">A wide-angle perspective of a serene lake surrounded by mountains, reflecting the sky and creating a sense of infinite space.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0768.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0771.mp4"></video>
+                <div class="prompt">A close-up of a pair of eyes, revealing the subtle emotions and reflections within them.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0771.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0796.mp4"></video>
+                <div class="prompt">A pan right through a grand ballroom, revealing the elegant decor and people dancing gracefully in their finest attire.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0796.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0828.mp4"></video>
+                <div class="prompt">A zoom-in on a drop of morning dew on a leaf, showing the reflection of the surrounding world within it.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0828.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0847.mp4"></video>
+                <div class="prompt">A handheld perspective of someone hiking up a rocky trail, with the camera shaking slightly to mimic the rugged terrain.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0847.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0856.mp4"></video>
+                <div class="prompt">A little boy is riding a dragon in the sky to a castle</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0856.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0857.mp4"></video>
+                <div class="prompt">a green monster shaped like a human and made of plants is walking in an airport</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0857.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0858.mp4"></video>
+                <div class="prompt">A rapid tracking shot of small, big-eared gremlins on a wooden rollercoaster in a midcentury theme park. The gremlins have thin, scaly green skin with brown and black flecks. They stretch their spindly arms up and scream with wide, toothy grins as they race down a steep drop. The rollercoaster's honey-brown wooden tracks contrast with the bright, neon theme park colors. In the background, the ocean glimmers, its waves crashing against the shore, capturing the nostalgia of 1980s horror movies.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0858.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0861.mp4"></video>
+                <div class="prompt">Camera tracking shot. An early 19th century scuba diver with a huge iron helmet and an iron body suit lounges on an antique lawn chair. The light is diffused and gray, casting soft shadows along the scene. The diver brings a martini glass to his helmet and puts it back down. The year is 1912. The diver is in a grassy tree-filled park. People in period-accurate dress mill around, wearing long dresses and suits, holding parasols. The diver's suit is burnished and old, held together with rusted bolts. The diver tips the martini toward his helmet and clinks the glass against the glass. The scene should feel serene and beautiful, evoking the feeling of an impressionist painting.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0861.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0869.mp4"></video>
+                <div class="prompt">Hand-drawn simple line art, a young kid looking up into space with a wondrous expression on his face.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0869.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0885.mp4"></video>
+                <div class="prompt">A little girl and her mother are eating watermelon, which is cut in half. The mother scoops out the sweetest part from the middle of the watermelon with a spoon and hands it to the girl.</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0885.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0898.mp4"></video>
+                <div class="prompt">a toy robot wearing blue jeans and a white t shirt taking a pleasant stroll in Mumbai India during a winter storm</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0898.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0905.mp4"></video>
+                <div class="prompt">a toy robot wearing purple overalls and cowboy boots taking a pleasant stroll in Mumbai India during a beautiful sunset</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0905.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0907.mp4"></video>
+                <div class="prompt">a toy robot wearing purple overalls and cowboy boots taking a pleasant stroll in Mumbai India during a winter storm</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0907.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0911.mp4"></video>
+                <div class="prompt">a toy robot wearing purple overalls and cowboy boots taking a pleasant stroll in Antarctica during a beautiful sunset</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0911.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0915.mp4"></video>
+                <div class="prompt">a toy robot wearing a green dress and a sun hat taking a pleasant stroll in Mumbai India during a colorful festival</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0915.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0922.mp4"></video>
+                <div class="prompt">a toy robot wearing a green dress and a sun hat taking a pleasant stroll in Antarctica during a winter storm</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0922.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0927.mp4"></video>
+                <div class="prompt">a woman wearing blue jeans and a white t shirt taking a pleasant stroll in Johannesburg South Africa during a colorful festival</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0927.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0935.mp4"></video>
+                <div class="prompt">a woman wearing purple overalls and cowboy boots taking a pleasant stroll in Johannesburg South Africa during a beautiful sunset</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0935.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0944.mp4"></video>
+                <div class="prompt">a woman wearing a green dress and a sun hat taking a pleasant stroll in Johannesburg South Africa during a beautiful sunset</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0944.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0958.mp4"></video>
+                <div class="prompt">an adorable kangaroo wearing blue jeans and a white t shirt taking a pleasant stroll in Antarctica during a winter storm</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0958.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0963.mp4"></video>
+                <div class="prompt">an adorable kangaroo wearing purple overalls and cowboy boots taking a pleasant stroll in Johannesburg South Africa during a colorful festival</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0963.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0988.mp4"></video>
+                <div class="prompt">an old man wearing purple overalls and cowboy boots taking a pleasant stroll in Mumbai India during a winter storm</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0988.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0990.mp4"></video>
+                <div class="prompt">an old man wearing purple overalls and cowboy boots taking a pleasant stroll in Johannesburg South Africa during a colorful festival</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0990.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0996.mp4"></video>
+                <div class="prompt">an old man wearing a green dress and a sun hat taking a pleasant stroll in Mumbai India during a colorful festival</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_0996.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+            <div class="prompt-wrap full-screen-wrap">
+                <video autoplay="" playsinline="" muted="" loop="" src="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_1001.mp4"></video>
+                <div class="prompt">an old man wearing a green dress and a sun hat taking a pleasant stroll in Antarctica during a beautiful sunset</div>
+            <a href="https://huggingface.co/datasets/anonymous-goku/Goku-MovieGenBench/resolve/main/videos/moviegen_bench_1001.mp4" class="full-screen-button" target="_blank" rel="noopener noreferrer"></a></div>
+        </div>
+    </section>
+
+
+    <script>
+        document.querySelectorAll(".full-screen-wrap").forEach(function(element){
+            var video = element.querySelector("video");
+            var image = element.querySelector("img");
+            if (video || image) {
+                var link = document.createElement("a");
+                link.href = video ? video.src : image.src;
+                link.className = "full-screen-button";
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                element.append(link);
+            }
+        });
+    </script>
+
+
+</body></html>
